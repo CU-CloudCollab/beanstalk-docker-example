@@ -1,0 +1,14 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Ports": [
+    {
+      "ContainerPort": "80"
+    }
+  ],
+  "Volumes": [
+    {
+      "HostDirectory": "/mnt/efs",
+      "ContainerDirectory": "/usr/share/nginx/www/efs"
+    }
+  ]
+}

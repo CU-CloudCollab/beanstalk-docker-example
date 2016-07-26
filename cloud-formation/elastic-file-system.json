@@ -1,0 +1,131 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+
+    "Description": "Create EFS, mount points, security groups.",
+
+    "Metadata": {
+        "Sample": {
+            "Description": "This is a sample metadata entry."
+        }
+    },
+
+    "Parameters": {
+        "vpcID": {
+            "Type": "AWS::EC2::VPC::Id",
+            "Description": "VPC Id"
+        },
+        "privateSubnetAZ1": {
+            "Type": "AWS::EC2::Subnet::Id",
+            "Description": "ID of private subnet in first AZ."
+        },
+        "privateSubnetAZ2": {
+            "Type": "AWS::EC2::Subnet::Id",
+            "Description": "ID of private subnet in second AZ."
+        },
+        "identifyingTagValue": {
+            "Type": "String",
+            "Default": "beanstalk-docker-example-EFS",
+            "Description": "Value of tag to use to identify these resources."
+        }
+    },
+
+    "Mappings": {},
+
+    "Conditions": {},
+
+    "Resources": {
+
+        "mountTargetSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "vpcID"
+                },
+                "GroupDescription": "Security group for mount target",
+                "SecurityGroupIngress": [{
+                    "IpProtocol": "tcp",
+                    "FromPort": "22",
+                    "ToPort": "22",
+                    "CidrIp": "10.0.0.0/8"
+                }, {
+                    "IpProtocol": "tcp",
+                    "FromPort": "80",
+                    "ToPort": "80",
+                    "CidrIp": "0.0.0.0/0"
+                }]
+            }
+        },
+
+        "securityGroupIngress": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "mountTargetSecurityGroup"
+                },
+                "IpProtocol": "tcp",
+                "ToPort": "2049",
+                "FromPort": "2049",
+                "SourceSecurityGroupId": {
+                    "Ref": "mountTargetSecurityGroup"
+                }
+            }
+        },
+
+        "fileSystem": {
+            "Type": "AWS::EFS::FileSystem",
+            "Properties": {
+                "FileSystemTags": [{
+                    "Key": "Name",
+                    "Value": {
+                        "Ref": "identifyingTagValue"
+                    }
+                }]
+            }
+        },
+
+        "mountTargetAZ1": {
+            "Type": "AWS::EFS::MountTarget",
+            "Properties": {
+                "FileSystemId": {
+                    "Ref": "fileSystem"
+                },
+                "SubnetId": {
+                    "Ref": "privateSubnetAZ1"
+                },
+                "SecurityGroups": [{
+                    "Ref": "mountTargetSecurityGroup"
+                }]
+            }
+        },
+
+        "mountTargetAZ2": {
+            "Type": "AWS::EFS::MountTarget",
+            "Properties": {
+                "FileSystemId": {
+                    "Ref": "fileSystem"
+                },
+                "SubnetId": {
+                    "Ref": "privateSubnetAZ2"
+                },
+                "SecurityGroups": [{
+                    "Ref": "mountTargetSecurityGroup"
+                }]
+            }
+        }
+    },
+
+    "Outputs": {
+        "OutputFileSystemId": {
+            "Description": "Id of newly created Elastic File System",
+            "Value": {
+                "Ref": "fileSystem"
+            }
+        },
+        "OutputSecurityGroup": {
+            "Description": "Add instances that need access to the EFS to this security group",
+            "Value": {
+                "Ref": "mountTargetSecurityGroup"
+            }
+        }
+    }
+}
