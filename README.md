@@ -386,7 +386,7 @@ The power of EB is that it will automatically update our environment to satisfy 
 1. Tell EB to update your environment accordingly:
 
   ```
-  $ eb deploy --staged`
+  $ eb deploy --staged
   ```
   This tells EB to deploy the change you made to the configuration. The "--staged" option tells it to pay attention to changes that aren't yet committed to the Git repo. See [EB documentation](http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb3-cli-git.html) for more info about using Git and the EB CLI interface together.
 1. Watch as EB adds another instance and changes load balancer configuration to use it.
