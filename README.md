@@ -128,10 +128,23 @@ This is an example of a Docker application deployed via Elastic Beanstalk where 
     Subnets: "subnet-7704a001,subnet-dd8519f6" # REPLACE
     ELBSubnets: "subnet-7704a001,subnet-dd8519f6" # REPLACE
   # ...
-  aws:elasticbeanstalk:application:environment:
+  020-mount-efs:
+    command: "/tmp/mount-efs.sh"
+    test: "! grep -qs '/mnt/efs ' /proc/mounts"
+    env:
       # This should be replaced by the EFS created by the EFS CloudFormation template.
       TARGET_EFS_ID: fs-4a1adc03 # REPLACE
   ```
+
+1. Commit the changes to your local Git repository.  EB will build your application from
+the files in your local repository master branch, NOT from your file system copies, so this
+step is important.
+
+  ```
+  $ git add --all
+  $ git commit -m "Changes to example.config for my account"
+  ```
+
 1. Create the first environment, example-test, for our EB application. This single CLI command will take several minutes to create the entire infrastructure.
 
   ```
@@ -259,8 +272,6 @@ option_settings:
   aws:elasticbeanstalk:application:environment:
     # These values get set in the EC2 shell environment at launch
     key1: example-value1
-    # This should be replaced by the EFS created by the EFS CloudFormation template.
-    TARGET_EFS_ID: fs-4a1adc03 # REPLACE
   aws:elasticbeanstalk:environment:
     # LoadBalanced the application so we can play with multiple instances later.
     EnvironmentType: LoadBalanced
@@ -318,7 +329,7 @@ files:
       mount -t nfs4 -o nfsvers=4.1 $ENDPOINT /mnt/efs
 
       # Docker needs to be restarted to become aware of the new file system.
-      service docker restart
+      /usr/sbin/service docker restart
 commands:
   # Create a directory to which the EFS will be mouned,
   # only if it does not already exist.
@@ -330,6 +341,9 @@ commands:
   020-mount-efs:
     command: "/tmp/mount-efs.sh"
     test: "! grep -qs '/mnt/efs ' /proc/mounts"
+    env:
+      # This should be replaced by the EFS created by the EFS CloudFormation template.
+      TARGET_EFS_ID: fs-4a1adc03 # REPLACE
   # Copy our example content to EFS sto ensure something is there (only if
   # nothing is there yet.)
   030-populate-efs:
@@ -386,6 +400,7 @@ The power of EB is that it will automatically update our environment to satisfy 
 1. Tell EB to update your environment accordingly:
 
   ```
+  $ git add --all
   $ eb deploy --staged
   ```
   This tells EB to deploy the change you made to the configuration. The "--staged" option tells it to pay attention to changes that aren't yet committed to the Git repo. See [EB documentation](http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb3-cli-git.html) for more info about using Git and the EB CLI interface together.
